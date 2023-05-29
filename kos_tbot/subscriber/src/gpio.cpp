@@ -16,9 +16,7 @@
 
 #define GPIO_PIN_NUM_IN1 17U
 #define GPIO_PIN_NUM_IN2 6U
-#define UART_TXD 14
-#define UART_RXD 15
-#define UART_GND 9U
+
 
 #define HIGH 1
 #define LOW 0
@@ -50,7 +48,7 @@ int gpiomain(const std::string& cmd)
             fprintf(stderr, "Failed to initialize BSP\n");
             return EXIT_FAILURE;
         }
-
+	
         rc = BspSetConfig("gpio0", "raspberry_pi4b.default");
         if (rc != BSP_EOK)
         {
@@ -60,6 +58,8 @@ int gpiomain(const std::string& cmd)
     }
     
 #endif
+    std::string darkcmd;
+    std::string lightcmd;
 
     if (GpioInit())
     {
@@ -84,12 +84,12 @@ int gpiomain(const std::string& cmd)
     
    
 
-    if(cmd == light)
+    if(cmd == lightcmd)
     {
       light(p_handle);
     }
     
-    if(cmd == dark)
+    if(cmd == darkcmd)
     {
       dark(p_handle);
     }
