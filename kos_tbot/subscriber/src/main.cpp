@@ -28,8 +28,8 @@ int main(void) try
     listener.set_callback_message([&](telegram::types::message const &message) {
       std::int64_t const admin_chat_id = 1046063063;
       std::vector<int64_t> allowed_user_ids = {1046063063};
-      std::string dark = dark;
-      std::string light = light;
+      std::string darkcmd;
+      std::string lightcmd;
       std::string const message_from(message.from ? message.from->first_name : "Unknown sender");
       std::string const reply(message_from + " sent \"" + *message.text + "\" to chat id " + std::to_string(message.chat.id));
 
@@ -38,14 +38,24 @@ int main(void) try
       	sender.send_message(admin_chat_id, message_from + " tried to send \"" + *message.text + "\" to chat id " + std::to_string(message.chat.id));
       }
       else if(message.text && *message.text == "/turnon") {
-      	gpiomain(dark);
-	sender.send_message(message.chat.id, "Turning on...");
-	sender.send_message(admin_chat_id, reply);
+      	if(gpiomain(lightcmd) == EXIT_SUCCESS) {
+		sender.send_message(message.chat.id, "Turned on");
+		sender.send_message(admin_chat_id, reply + " which succeded");
+	}
+	else {
+		sender.send_message(message.chat.id, "Sorry, that didn't work for some reason, ask Konstantin about it...");
+		sender.send_message(admin_chat_id, reply + " which failed");
+	}
       }
       else if (*message.text == "/turnoff"){
-      	gpiomain(light);
-      	sender.send_message(message.chat.id, "Turning off...");
-      	sender.send_message(admin_chat_id, reply);
+      	if(gpiomain(darkcmd) == EXIT_SUCCESS) {
+		sender.send_message(message.chat.id, "Turned off");
+		sender.send_message(admin_chat_id, reply + " which succeded");
+	}
+	else {
+		sender.send_message(message.chat.id, "Sorry, that didn't work for some reason, ask Konstantin about it...");
+		sender.send_message(admin_chat_id, reply + " which failed");
+	}
       }
     });
     listener.run();
