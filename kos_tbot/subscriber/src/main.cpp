@@ -22,13 +22,13 @@ int main(void) try
         throw std::runtime_error{"Error: Wait for network failed!"};
     }
 
-    std::string const token("6061436734:AAH8WE92XUAlopJCYhwtuN5GvJqjv2eFQ7k");
+    std::string const token("123456"); //your telegram bot token
     telegram::sender sender(token);
     telegram::listener::poll listener(sender);
 
     listener.set_callback_message([&](telegram::types::message const &message) {
-      std::int64_t const admin_chat_id = 1046063063;
-      std::vector<int64_t> allowed_user_ids = {1046063063};
+      std::int64_t const admin_chat_id = 123; //Your telegram id
+      std::vector<int64_t> allowed_user_ids = {123}; //Ids you allow to enter commands
       std::string reddarkcmd = "reddark";
       std::string redlightcmd = "redlight";
       std::string yellowdarkcmd = "yellowdark";
