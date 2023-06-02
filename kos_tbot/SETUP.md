@@ -14,5 +14,3 @@
 # mosquitto_pub  -t "sometopic" -m 'hello"
 ```
 5. Power up the RPi4.
-
-© 2022 AO Kaspersky Lab

@@ -14,7 +14,9 @@ include (platform/nk)
 nk_build_edl_files (subscriber_edl_files
                     NK_MODULE "mosquitto" EDL
                     "resources/edl/Subscriber.edl")
-                    
+
+
+# Platform definition
 include (platform/options)
 
 if ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "arm|aarch64")
@@ -49,10 +51,6 @@ include_directories (${precompiled_vfs_INCLUDE})
 # If none of the options are selected, the ramfs device is used.
 option (ROOTFS_SDCARD "Use SD card to mount root filesystem" OFF)
 message (STATUS "Use SD card to mount root filesystem - ${ROOTFS_SDCARD}")
-
-# Set mqtt broker ip address and port.
-set (MQTT_BROKER_ADDRESS  10.0.2.2)
-set (MQTT_BROKER_PORT     1883)
 
 # Attach the directory with the generated config header files
 include_directories (${CMAKE_CURRENT_BINARY_DIR})

@@ -28,20 +28,12 @@ endif ()
 if (ROOTFS_SDCARD)
     set (ROOTFS_ENTITY "kl.VfsSdCardFs")
     set (FS_BACKEND ${precompiled_vfsVfsSdCardFs})
-    set (FS_IMAGE sdcard0.img)
-    set (FS_IMG_FORMAT fat32)
-    set (FS_IMG_SIZE 64)
-    set (QEMU_FLAGS "-drive file=${FS_IMAGE},if=sd,format=raw")
+    list (APPEND ENTITIES ${precompiled_vfsVfsSdCardFs})
 else()
     set (ROOTFS_ENTITY "kl.VfsRamFs")
     set (FS_BACKEND ${precompiled_vfsVfsRamFs})
-    set (FS_IMAGE ramdisk0.img)
-    set (FS_IMG_FORMAT ext4)
-    set (FS_IMG_SIZE 2)
-    set (FILES ${CMAKE_BINARY_DIR}/einit/${FS_IMAGE})
+    list (APPEND ENTITIES ${precompiled_vfsVfsRamFs})
 endif()
-
-list (APPEND ENTITIES ${FS_BACKEND})
 
 set_target_properties(${FS_BACKEND} PROPERTIES
     EXTRA_ARGS "\
@@ -64,34 +56,53 @@ set_target_properties (${rump_DHCPCD_ENTITY} PROPERTIES
     - -f
     - /etc/dhcpcd.conf")
 
-# Add a target to create disk image.
-add_custom_target (${FS_IMAGE}
-    COMMAND  ${KL_SDK_ROOT_PATH}/common/prepare_hdd_img.sh
-        -d   ${CMAKE_SOURCE_DIR}/resources/hdd
-        -s   ${FS_IMG_SIZE}
-        -f   ${FS_IMG_FORMAT}
-        -img ${FS_IMAGE})
+# Add a target for making and copying the disk image to the example build
+# directory.
+add_custom_command (OUTPUT ramdisk0.img
+                    COMMAND ${CMAKE_COMMAND} -E make_directory
+                        ${CMAKE_BINARY_DIR}/hdd
+                    COMMAND ${CMAKE_COMMAND} -E copy_directory
+                        ${CMAKE_SOURCE_DIR}/resources/ramfs
+                        ${CMAKE_BINARY_DIR}/hdd
+                    COMMAND $ENV{SDK_PREFIX}/common/prepare_hdd_img.sh -d
+                        ${CMAKE_BINARY_DIR}/hdd -img ramdisk0.img -f ext4 -s 128)
+add_custom_target (ramdisk0.img DEPENDS ramdisk0.img)
+
+# Add a target for making and copying the disk image to the example build
+# directory.
+add_custom_command (OUTPUT sdcard0.img
+                    COMMAND ${CMAKE_COMMAND} -E make_directory
+                        ${CMAKE_BINARY_DIR}/hdd
+                    COMMAND ${CMAKE_COMMAND} -E copy_directory
+                        ${CMAKE_SOURCE_DIR}/resources/sdcard
+                        ${CMAKE_BINARY_DIR}/hdd
+                    COMMAND $ENV{SDK_PREFIX}/common/prepare_hdd_img.sh -d
+                        ${CMAKE_BINARY_DIR}/hdd -img sdcard0.img -f fat32)
+add_custom_target (sdcard0.img DEPENDS sdcard0.img)
+
+set (QEMU_FLAGS "-sd sdcard0.img")
+set (SECURITY_PSL_FILE "src/security.psl")
+set (FILES ${CMAKE_BINARY_DIR}/einit/ramdisk0.img)
 
 # KasperskyOS image for the target hardware platform.
 build_kos_hw_image (kos-image
-                    EINIT_ENTITY    EinitHw
+                    EINIT_ENTITY EinitHw
                     CONNECTIONS_CFG "src/init.yaml.in"
-                    SECURITY_PSL    ${SECURITY_PSL_FILE}
-                    IMAGE_FILES     ${ENTITIES} ${FILES})
-
-if (NOT ROOTFS_SDCARD)
-    add_dependencies (kos-image ${FS_IMAGE})
-endif ()
+                    SECURITY_PSL ${SECURITY_PSL_FILE}
+                    IMAGE_FILES  ${ENTITIES}
+                                 ${FILES})
+add_dependencies (kos-image ramdisk0.img)
 
 # KasperskyOS image for QEMU with simulation targets (sim, gdbsim, gdb).
 build_kos_qemu_image (kos-qemu-image
-                      EINIT_ENTITY    EinitQemu
+                      EINIT_ENTITY EinitQemu
                       CONNECTIONS_CFG "src/init.yaml.in"
-                      SECURITY_PSL    ${SECURITY_PSL_FILE}
-                      QEMU_FLAGS      ${QEMU_FLAGS}
-                      IMAGE_FILES     ${ENTITIES} ${FILES})
-
-add_dependencies (kos-qemu-image ${FS_IMAGE})
+                      SECURITY_PSL ${SECURITY_PSL_FILE}
+                      QEMU_FLAGS   ${QEMU_FLAGS}
+                      IMAGE_FILES  ${ENTITIES}
+                                   ${CMAKE_BINARY_DIR}/einit/sdcard0.img
+                                   ${FILES})
+add_dependencies (kos-qemu-image ramdisk0.img sdcard0.img)
 
 set_target_properties (EinitHw PROPERTIES LINK_FLAGS ${VULN_LDFLAGS})
 set_target_properties (EinitQemu PROPERTIES LINK_FLAGS ${VULN_LDFLAGS})

@@ -7,37 +7,47 @@
 #include <gpio/gpio.h>
 #include <stdbool.h>
 #include <string>
-#include <iostream>
 #include "gpioled.h"
 
 #ifdef __arm__
 #include <bsp/bsp.h>
 #endif
 
-#define GPIO_PIN_NUM_IN1 17U
-#define GPIO_PIN_NUM_IN2 6U
+#define GPIO_PIN_NUM_1 2U
+#define GPIO_PIN_NUM_2 18U
 
-
+#define BUF_SIZE 1024
 #define HIGH 1
 #define LOW 0
 
-
-
-void light(GpioHandle* handle) {
-    fprintf(stderr, "Turning on the LED...\n");
-    GpioOut(*handle, GPIO_PIN_NUM_IN1, HIGH);
-    GpioOut(*handle, GPIO_PIN_NUM_IN2, HIGH);
+void redlight(GpioHandle* handle){
+    GpioOut(*handle, GPIO_PIN_NUM_1, HIGH);
 }
 
-void dark(GpioHandle* handle) {
-    fprintf(stderr, "Turning of the LED...\n");
-    GpioOut(*handle, GPIO_PIN_NUM_IN1, LOW);
-    GpioOut(*handle, GPIO_PIN_NUM_IN2, LOW);
+void reddark(GpioHandle* handle){
+    GpioOut(*handle, GPIO_PIN_NUM_1, LOW);
+}
+
+void yellowlight(GpioHandle* handle){
+    GpioOut(*handle, GPIO_PIN_NUM_2, HIGH);
+}
+
+void yellowdark(GpioHandle* handle){
+    GpioOut(*handle, GPIO_PIN_NUM_2, LOW);
+}
+
+void alllight(GpioHandle* handle){
+    GpioOut(*handle, GPIO_PIN_NUM_1, HIGH);
+    GpioOut(*handle, GPIO_PIN_NUM_2, HIGH);
+}
+
+void alldark(GpioHandle* handle){
+    GpioOut(*handle, GPIO_PIN_NUM_2, LOW);
+    GpioOut(*handle, GPIO_PIN_NUM_1, LOW);
 }
 
 int gpiomain(const std::string& cmd)
 {
-    fprintf(stderr, "Start GPIO_output test\n");
 
 #ifdef __arm__
 
@@ -48,7 +58,7 @@ int gpiomain(const std::string& cmd)
             fprintf(stderr, "Failed to initialize BSP\n");
             return EXIT_FAILURE;
         }
-	
+
         rc = BspSetConfig("gpio0", "raspberry_pi4b.default");
         if (rc != BSP_EOK)
         {
@@ -56,10 +66,7 @@ int gpiomain(const std::string& cmd)
             return EXIT_FAILURE;
         }
     }
-    
 #endif
-    std::string darkcmd;
-    std::string lightcmd;
 
     if (GpioInit())
     {
@@ -67,7 +74,6 @@ int gpiomain(const std::string& cmd)
         return EXIT_FAILURE;
     }
 
-    /* initialize and setup gpio0 port */
     GpioHandle handle = NULL;
     if (GpioOpenPort("gpio0", &handle) || handle == GPIO_INVALID_HANDLE)
     {
@@ -75,27 +81,44 @@ int gpiomain(const std::string& cmd)
         return EXIT_FAILURE;
     }
 
-    GpioSetMode(handle, GPIO_PIN_NUM_IN1, GPIO_DIR_OUT);
-    GpioSetMode(handle, GPIO_PIN_NUM_IN2, GPIO_DIR_OUT);
+    GpioSetMode(handle, GPIO_PIN_NUM_1, GPIO_DIR_OUT);
+    GpioSetMode(handle, GPIO_PIN_NUM_2, GPIO_DIR_OUT);
 
-
-    fprintf(stderr, "Starting move (%s)\n", cmd);
     GpioHandle* p_handle = &handle;
-    
-   
 
-    if(cmd == lightcmd)
+    if(cmd=="redlight")
     {
-      light(p_handle);
-    }
-    
-    if(cmd == darkcmd)
-    {
-      dark(p_handle);
-    }
-    
+      redlight(p_handle);
 
-    fprintf(stderr, "Test finished.\n");
+    }
+    if(cmd=="reddark")
+    {
+      reddark(p_handle);
+    }
+    if(cmd=="yellowlight")
+    {
+      yellowlight(p_handle);
+
+    }
+    if(cmd=="yellowdark")
+    {
+      yellowdark(p_handle);
+    }
+    if(cmd=="alllight")
+    {
+      alllight(p_handle);
+
+    }
+    if(cmd=="alldark")
+    {
+      alldark(p_handle);
+    }
+
+    if(GpioClosePort(handle))
+    {
+        fprintf(stderr, "GpioClosePort failed\n");
+        return EXIT_FAILURE;
+    }
 
     return EXIT_SUCCESS;
 }
